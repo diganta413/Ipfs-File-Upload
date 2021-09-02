@@ -38,6 +38,9 @@ class App extends Component {
       // Set web3, accounts, and contract to the state, and then proceed with an
       // example of interacting with the contract's methods.
       this.setState({ web3, accounts, contract: instance }, this.runExample);
+		instance.methods.get().call().then((ipfsHash) => {
+		this.setState({img_hash: ipfsHash})
+		}).catch((err) => console.log(err))
     } catch (error) {
       // Catch any errors for any of the above operations.
       alert(
@@ -65,10 +68,16 @@ class App extends Component {
 	}
 
 	async addImage(e){
+    	const { accounts, contract } = this.state;
 		console.log(this.client)
 		e.preventDefault()
 		const added = await this.client.add(this.state.file)
-		this.setState({img_hash: added.path})
+		await contract.methods.set(added.path).send({ from: accounts[0] })
+		const response = contract.methods.get().call().
+			then((ipfsHash) =>{
+			console.log("Ipfs:" + ipfsHash)
+			this.setState({img_hash: ipfsHash})
+			} ).catch((err) => console.log(err))
 	}
 
   render() {
@@ -77,9 +86,10 @@ class App extends Component {
     }
     return (
       <div className="App">
-		<img src= {`https://ipfs.infura.io/ipfs/${this.state.img_hash}`} />
+		<h1>Your Image</h1>
+		<img src= {`https://ipfs.infura.io/ipfs/${this.state.img_hash}`} style={{ width: "500px",height: "500px"  }} />
 		<form onSubmit={this.addImage} >
-			<input type="file" onChange={this.picChange}/>
+			<input type="file" onChange={this.picChange} style={{ marginTop: "100px"  }} />
 			<button type="submit">Submit</button>
 		</form>
       </div>
